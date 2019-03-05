@@ -1704,7 +1704,6 @@ repeat:
 
 	cond_resched();
 	lru_add_drain_all();
-	drain_all_pages(zone);
 
 	pfn = scan_movable_pages(start_pfn, end_pfn);
 	if (pfn) { /* We have movable pages */
