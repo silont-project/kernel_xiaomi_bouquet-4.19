@@ -31,7 +31,7 @@
 
 	chosen {
 		stdout-path = "serial0";
-		bootargs = "cgroup_disable=pressure cgroup.memory=nokmem,nosocket noirqdebug";
+		bootargs = "cgroup_disable=pressure cgroup.memory=nokmem,nosocket noirqdebug nodebugmon";
 	};
 
 	psci {
