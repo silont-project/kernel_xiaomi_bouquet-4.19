@@ -1392,6 +1392,9 @@ config GCC_GRAPHITE
 	bool "Enable GCC Polyhedral Loop Optimization (Graphite)"
 	depends on CC_IS_GCC
 
+config LTO_GCC
+	bool "Enable Link Time Optimization for GCC"
+
 config HAVE_LD_DEAD_CODE_DATA_ELIMINATION
 	bool
 	help
