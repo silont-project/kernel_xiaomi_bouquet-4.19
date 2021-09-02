@@ -532,6 +532,9 @@ struct cpu_cycle_counter_cb {
 };
 int register_cpu_cycle_counter_cb(struct cpu_cycle_counter_cb *cb);
 
+static inline void sched_update_cpu_freq_min_max(const cpumask_t *cpus,
+					u32 fmin, u32 fmax) { }
+
 struct sched_rt_entity {
 	struct list_head		run_list;
 	unsigned long			timeout;
