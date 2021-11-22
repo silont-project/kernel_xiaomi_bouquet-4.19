@@ -137,7 +137,7 @@ static void __zstd_exit(void *ctx)
 static void zstd_free_ctx(struct crypto_scomp *tfm, void *ctx)
 {
 	__zstd_exit(ctx);
-	kfree_sensitive(ctx);
+	kzfree(ctx);
 }
 
 static void zstd_exit(struct crypto_tfm *tfm)
