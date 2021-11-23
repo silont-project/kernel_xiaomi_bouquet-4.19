@@ -1,0 +1,82 @@
+/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+*/
+
+/ {
+	reserved-memory {
+		ramoops {
+			compatible = "removed-dma-pool", "ramoops";
+			no-map;
+			reg = <0x0 0xA0000000 0x0 0x00400000>;
+			status = "ok";
+			console-size = <0x200000>;
+			pmsg-size = <0x200000>;
+		};
+	};
+};
+
+&firmware {
+	android {
+		/delete-node/ vbmeta;
+		fstab {
+			system {
+				compatible = "android,system";
+				dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/system";
+				type = "ext4";
+				mnt_flags = "ro,barrier=1,discard";
+				fsmgr_flags = "wait";
+				status = "ok";
+			};
+			vendor {
+				fsmgr_flags = "wait";
+			};
+		};
+	};
+};
+
+&soc {
+
+	hall_switch {
+	    compatible = "hall-switch,och175";
+	    pinctrl-names = "hall_active","hall_suspend";
+	    pinctrl-0 = <&hall_int_active>;
+	    pinctrl-1 = <&hall_int_suspend>;
+	    //interrupt-parent = <&msm_gpio>;
+	    //interrupts = <0 107 3>;
+	    vdd-io-supply= <&pm660_l8>;
+	    interrupt-names = "hall_irq";
+	    hall,irq-gpio = <&tlmm 75 0x0>;
+	};
+
+	qcom,msm_fastrpc {
+		/delete-property/ qcom,fastrpc-adsp-sensors-pdr;
+	};
+
+	/delete-node/ qcom,qbt1000;
+};
+
+&sdhc_2 {
+	cd-gpios = <&tlmm 54 0x0>;
+};
+
+&qcom_seecom {
+	qcom,qsee-reentrancy-support = <0>;
+	/delete-property/ qcom,fde-key-size;
+};
+
+#include "tulip-audio.dtsi"
+#include "tulip-camera.dtsi"
+#include "tulip-fingerprint.dtsi"
+#include "tulip-panel.dtsi"
+#include "tulip-pinctrl.dtsi"
+#include "tulip-pm.dtsi"
+#include "tulip-touch.dtsi"

@@ -34,6 +34,9 @@ else
 ifeq ($(CONFIG_XIAOMI_WHYRED),y)
 dtb-$(CONFIG_XIAOMI_WHYRED) := whyred.dtb
 else
+ifeq ($(CONFIG_XIAOMI_TULIP),y)
+dtb-$(CONFIG_XIAOMI_TULIP) := tulip.dtb
+else
 dtb-$(CONFIG_ARCH_SDM660) += sdm660-sim.dtb \
 sdm660-internal-codec-cdp.dtb \
         sdm660-internal-codec-mtp.dtb \
@@ -83,6 +86,7 @@ sdm660-internal-codec-cdp.dtb \
         sdm636-pm660a-rcm.dtb \
         sdm636-usbc-audio-mtp.dtb \
         sdm636-usbc-audio-rcm.dtb
+endif
 endif
 endif
 
