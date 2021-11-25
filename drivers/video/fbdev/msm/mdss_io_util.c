@@ -8,8 +8,9 @@
 #include <linux/delay.h>
 #include <linux/mdss_io_util.h>
 
-#ifdef CONFIG_XIAOMI_WHYRED
 extern bool enable_gesture_mode;
+
+#ifdef CONFIG_XIAOMI_WHYRED
 extern bool synaptics_gesture_func_on;
 #endif
 
@@ -267,6 +268,9 @@ int msm_dss_enable_vreg(struct dss_vreg *in_vreg, int num_vreg, int enable)
 #ifdef CONFIG_XIAOMI_WHYRED
 			/* vddio lab ibb continus supply */
 			if(enable_gesture_mode || synaptics_gesture_func_on) {
+#elif defined CONFIG_XIAOMI_TULIP
+			if(enable_gesture_mode) {
+#endif
 				if( (strcmp(in_vreg[i].vreg_name,"lab")==0) ||
 						(strcmp(in_vreg[i].vreg_name,"ibb")==0) ||
 						(strcmp(in_vreg[i].vreg_name,"wqhd-vddio")==0) ) {
@@ -274,7 +278,6 @@ int msm_dss_enable_vreg(struct dss_vreg *in_vreg, int num_vreg, int enable)
 					continue;
 				}
 			}
-#endif
 			rc = PTR_RET(in_vreg[i].vreg);
 			if (rc) {
 				DEV_ERR("%pS->%s: %s regulator error. rc=%d\n",
@@ -317,6 +320,9 @@ int msm_dss_enable_vreg(struct dss_vreg *in_vreg, int num_vreg, int enable)
 #ifdef CONFIG_XIAOMI_WHYRED
 			/* vddio lab ibb continus supply */
 			if(enable_gesture_mode || synaptics_gesture_func_on) {
+#elif defined CONFIG_XIAOMI_TULIP
+			if (enable_gesture_mode) {
+#endif
 				if( (strcmp(in_vreg[i].vreg_name,"lab")==0) ||
 						(strcmp(in_vreg[i].vreg_name,"ibb")==0) ||
 						(strcmp(in_vreg[i].vreg_name,"wqhd-vddio")==0) ) {
@@ -324,7 +330,6 @@ int msm_dss_enable_vreg(struct dss_vreg *in_vreg, int num_vreg, int enable)
 					continue;
 				}
 			}
-#endif
 			if (in_vreg[i].pre_off_sleep)
 				usleep_range(in_vreg[i].pre_off_sleep * 1000,
 					in_vreg[i].pre_off_sleep * 1000);

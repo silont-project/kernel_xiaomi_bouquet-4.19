@@ -208,11 +208,24 @@ int mdss_dsi_read_reg(struct mdss_dsi_ctrl_pdata *ctrl, char cmd0, int *val0, in
 	mdss_dsi_cmdlist_put(ctrl, &cmdreq);
 	*val0 = rbuf[0];
 
+#ifdef CONFIG_XIAOMI_TULIP
+	/* policy for e7t tianma nt36672a D0:x D2:y */
+	if (strstr(g_lcd_id,"tianma") != NULL)
+		*val1 = rbuf[2];
+	else {
+		/* policy for f7a ebbg nt36672a D0:x D1:y */
+		if(0 != rbuf[1])
+			*val1 = rbuf[1];
+		else
+			*val1 = rbuf[2];
+	}
+#else
 	/* policy for nt36672 */
 	if(0 != rbuf[1])
 		*val1 = rbuf[1];
 	else
 		*val1 = rbuf[2];
+#endif
 
 	printk("guorui:%x %x %x %x %x %x %x %x\n",rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7]);
 	return 0;
@@ -562,6 +575,8 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			printk("gesture mode keep reset gpio to high.\n");
 		else
 			gpio_set_value((ctrl_pdata->rst_gpio), 0);
+#elif defined(CONFIG_XIAOMI_TULIP)
+		printk(KERN_ERR "[lcd][tp][gesture] keep lcd_reset and tp_reset gpio to high.\n");
 #else
 		gpio_set_value((ctrl_pdata->rst_gpio), 0);
 #endif
