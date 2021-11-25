@@ -16,6 +16,7 @@
 #include <linux/iio/consumer.h>
 #include <linux/qpnp/qpnp-revid.h>
 #include <linux/qpnp/qpnp-misc.h>
+#include <linux/thermal.h>
 #include "fg-core.h"
 #include "fg-reg.h"
 
@@ -514,6 +515,9 @@ static bool fg_sram_dump;
 int hwc_check_india;
 int hwc_check_global;
 extern bool is_poweroff_charge;
+#ifdef CONFIG_XIAOMI_TULIP
+extern int rradc_die;
+#endif
 
 /* All getters HERE */
 
@@ -606,6 +610,9 @@ static int fg_get_battery_temp(struct fg_dev *fg, int *val)
 {
 	int rc = 0, temp;
 	u8 buf[2];
+#ifdef CONFIG_XIAOMI_TULIP
+	struct thermal_zone_device *quiet_them;
+#endif
 
 	rc = fg_read(fg, BATT_INFO_BATT_TEMP_LSB(fg), buf, 2);
 	if (rc < 0) {
@@ -620,9 +627,25 @@ static int fg_get_battery_temp(struct fg_dev *fg, int *val)
 
 	/* Value is in Kelvin; Convert it to deciDegC */
 	temp = (temp - 273) * 10;
-
+#ifdef CONFIG_XIAOMI_TULIP
+	if (temp < -40) {
+		switch (temp) {
+			case -50:
+				temp = -70;
+				break;
+			case -60:
+				temp = -80;
+				break;
+			case -70:
+				temp = -90;
+				break;
+			case -80:
+				temp = -100;
+				break;
+#else
 	if (temp < -80){
 		switch (temp){
+#endif
 		case -90:
 			temp = -110;
 			break;
@@ -652,6 +675,16 @@ static int fg_get_battery_temp(struct fg_dev *fg, int *val)
 			break;
 		};
 	}
+
+#ifdef CONFIG_XIAOMI_TULIP
+	if (rradc_die) {
+		quiet_them = thermal_zone_get_zone_by_name("quiet_therm");
+		if (quiet_them)
+			rc = thermal_zone_get_temp(quiet_them, &temp);
+		temp = (temp - 3) * 10;
+		pr_err("LCT USE QUIET_THERM AS BATTERY TEMP \n");
+	}
+#endif
 
 	*val = temp;
 	return 0;
@@ -893,9 +926,19 @@ static int fg_get_batt_profile(struct fg_dev *fg)
 		fg->bp.float_volt_uv = -EINVAL;
 	}
 
-	if (hwc_check_global){
+	if (hwc_check_global) {
 		fg->bp.fastchg_curr_ma = 2300;
-	}else{
+	}
+#ifdef CONFIG_XIAOMI_TULIP
+	else
+		if (is_poweroff_charge) {
+			if (hwc_check_india)
+				fg->bp.fastchg_curr_ma = 2200;
+			else
+				fg->bp.fastchg_curr_ma = 2300;
+		}
+#endif
+	else {
 	rc = of_property_read_u32(profile_node, "qcom,fastchg-current-ma",
 			&fg->bp.fastchg_curr_ma);
 	if (rc < 0) {
@@ -1922,6 +1965,11 @@ static int fg_adjust_recharge_voltage(struct fg_dev *fg)
 		recharge_volt_mv = 4050;
 	if (fg->health == POWER_SUPPLY_HEALTH_COOL)
         recharge_volt_mv = 4282;
+#elif defined(CONFIG_XIAOMI_TULIP)
+	if (fg->health == POWER_SUPPLY_HEALTH_WARM)
+		recharge_volt_mv = 4050;
+	if (fg->health == POWER_SUPPLY_HEALTH_COOL)
+		recharge_volt_mv = 4250;
 #endif
 
 	rc = fg_set_recharge_voltage(fg, recharge_volt_mv);
@@ -4043,6 +4091,9 @@ static int fg_property_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE:
 	case POWER_SUPPLY_PROP_CC_STEP:
 	case POWER_SUPPLY_PROP_CC_STEP_SEL:
+#ifdef CONFIG_XIAOMI_TULIP
+	case POWER_SUPPLY_PROP_FG_RESET_CLOCK:
+#endif
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
 	case POWER_SUPPLY_PROP_COLD_TEMP:
 	case POWER_SUPPLY_PROP_COOL_TEMP:

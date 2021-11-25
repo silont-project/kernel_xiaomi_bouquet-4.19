@@ -28,10 +28,14 @@
 
 union power_supply_propval lct_therm_lvl_reserved;
 union power_supply_propval lct_therm_level;
-#if defined(CONFIG_XIAOMI_WHYRED)
-union power_supply_propval lct_therm_call_level = {4,};
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 union power_supply_propval lct_therm_globe_level = {1,};
 union power_supply_propval lct_therm_india_level = {2,};
+#endif
+#if defined(CONFIG_XIAOMI_WHYRED)
+union power_supply_propval lct_therm_call_level = {4,};
+#elif defined(CONFIG_XIAOMI_TULIP)
+union power_supply_propval lct_therm_call_level = {5,};
 #endif
 
 bool lct_backlight_off;
@@ -311,9 +315,17 @@ static int smb2_parse_dt(struct smb2 *chip)
 	chip->dt.no_pd = of_property_read_bool(node,
 						"qcom,pd-not-supported");
 
-	if (hwc_check_global){
+	if (hwc_check_global) {
 		chg->batt_profile_fcc_ua = 2300000;
-	}else{
+#ifdef CONFIG_XIAOMI_TULIP
+		if (is_poweroff_charge) {
+			if (hwc_check_india)
+				chg->batt_profile_fcc_ua = 2200000;
+			else
+				chg->batt_profile_fcc_ua = 2300000;
+		}
+#endif
+	} else {
 	rc = of_property_read_u32(node,
 				"qcom,fcc-max-ua", &chg->batt_profile_fcc_ua);
 	if (rc < 0)
@@ -363,7 +375,7 @@ static int smb2_parse_dt(struct smb2 *chip)
 	if (rc < 0)
 		chip->dt.wipower_max_uw = -EINVAL;
 
-#if defined(CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 	if (hwc_check_india == 1){
 #endif
 	if (of_find_property(node, "qcom,thermal-mitigation", &byte_len)) {
@@ -385,7 +397,7 @@ static int smb2_parse_dt(struct smb2 *chip)
 		}
 	}
 
-#if defined(CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 	}
 	else {
 		if (of_find_property(node, "qcom,thermal-mitigation-china", &byte_len)) {
@@ -1798,7 +1810,7 @@ static int smb2_init_hw(struct smb2 *chip)
 	vote(chg->pd_disallowed_votable_indirect, PD_NOT_SUPPORTED_VOTER,
 			chip->dt.no_pd, 0);
 
-#if defined(CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 	/* Operate the QC2.0 in 5V/9V mode i.e. Disable 12V */
         rc = smblib_masked_write(chg, HVDCP_PULSE_COUNT_MAX_REG,
                                                 PULSE_COUNT_QC2P0_12V | PULSE_COUNT_QC2P0_9V,
@@ -2594,7 +2606,7 @@ static void thermal_fb_notifier_resume_work(struct work_struct *work)
 #if defined(CONFIG_XIAOMI_WHYRED)
 	if ((lct_backlight_off) && (LctIsInCall == 0) /*&& (hwc_check_india == 1)*/)
 	{
-		if (hwc_check_india == 1) {				
+		if (hwc_check_india == 1) {
 			if (lct_therm_lvl_reserved.intval >= 2)
 				smblib_set_prop_system_temp_level(chg,&lct_therm_india_level);
 			else
@@ -2611,6 +2623,12 @@ static void thermal_fb_notifier_resume_work(struct work_struct *work)
 		smblib_set_prop_system_temp_level(chg,&lct_therm_call_level);
 	else
 		smblib_set_prop_system_temp_level(chg,&lct_therm_lvl_reserved);
+	LctThermal = 0;
+#elif defined(CONFIG_XIAOMI_TULIP)
+	if (LctIsInCall)
+		smblib_set_prop_system_temp_level(chg, &lct_therm_call_level);
+	else
+		smblib_set_prop_system_temp_level(chg, &lct_therm_lvl_reserved);
 	LctThermal = 0;
 #endif
 }

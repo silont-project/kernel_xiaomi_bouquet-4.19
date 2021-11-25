@@ -22,6 +22,8 @@
 extern int hwc_check_global;
 #ifdef CONFIG_XIAOMI_WHYRED
 #define LCT_JEITA_CCC_AUTO_ADJUST  1
+#else
+#define LCT_JEITA_CCC_AUTO_ADJUST 0
 #endif
 
 #define smblib_err(chg, fmt, ...)		\
@@ -1475,9 +1477,9 @@ static int smblib_hvdcp_hw_inov_dis_vote_callback(struct votable *votable,
 	struct smb_charger *chg = data;
 	int rc;
 
-	#if defined (CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 	disable = 0;
-	#endif
+#endif
 
 	if (disable) {
 		/*
@@ -2302,7 +2304,7 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 		lct_therm_lvl_reserved.intval = val->intval;
 	}
 #if defined(CONFIG_XIAOMI_WHYRED)
-		if (hwc_check_india == 1) {	
+		if (hwc_check_india == 1) {
 		if ((lct_backlight_off) && (LctIsInCall == 0) && (val->intval > 2)) {
 		    return 0;
 		}
@@ -2315,6 +2317,12 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 	if ((LctIsInCall == 1) && (val->intval != 4)) {
 			return 0;
 		}
+#elif defined(CONFIG_XIAOMI_TULIP)
+	if ((lct_backlight_off) && (LctIsInCall == 0) && (val->intval > 3))
+		return 0;
+
+	if ((LctIsInCall == 1) && (val->intval != 5))
+		return 0;
 #endif
 	if (val->intval == chg->system_temp_level)
 		return 0;
@@ -2332,6 +2340,9 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 	{
 		vote(chg->pl_disable_votable, THERMAL_DAEMON_VOTER,false,0);
 	}
+#elif defined(CONFIG_XIAOMI_TULIP)
+	else if (chg->system_temp_level <= 2)
+		vote(chg->pl_disable_votable, THERMAL_DAEMON_VOTER,false,0);
 #endif
 	else
 	{
@@ -2447,7 +2458,7 @@ static int smblib_force_vbus_voltage(struct smb_charger *chg, u8 val)
 	return rc;
 }
 
-#if defined(CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 #define MAX_PLUSE_COUNT_ALLOWED 15
 #endif
 
@@ -2976,7 +2987,7 @@ int smblib_get_prop_die_health(struct smb_charger *chg,
 #define CDP_CURRENT_UA			1500000
 #define DCP_CURRENT_UA			2000000
 #define HVDCP2_CURRENT_UA		1500000
-#if defined(CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 #define HVDCP_CURRENT_UA		2000000
 #else
 #define HVDCP_CURRENT_UA		3000000
@@ -3021,6 +3032,8 @@ int smblib_set_prop_pd_current_max(struct smb_charger *chg,
 
 #if defined(CONFIG_XIAOMI_WHYRED)
 #define FLOAT_CURRENT_UA		500000
+#else
+#define FLOAT_CURRENT_UA		1000000
 #endif
 static int smblib_handle_usb_current(struct smb_charger *chg,
 					int usb_current)
@@ -4237,19 +4250,23 @@ static void smblib_force_legacy_icl(struct smb_charger *chg, int pst)
 		 * limit ICL to 100mA, the USB driver will enumerate to check
 		 * if this is a SDP and appropriately set the current
 		 */
-		#if defined (CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED)
 		vote(chg->usb_icl_votable, LEGACY_UNKNOWN_VOTER, true, 500000);
-		#endif
+#else
+		vote(chg->usb_icl_votable, LEGACY_UNKNOWN_VOTER, true, 1000000);
+#endif
 		break;
 	case POWER_SUPPLY_TYPE_USB_HVDCP:
-		#if defined(CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_TULIP)
+		vote(chg->usb_icl_votable, LEGACY_UNKNOWN_VOTER, true, 2000000);
+#else
 		vote(chg->usb_icl_votable, LEGACY_UNKNOWN_VOTER, true, 1500000);
-		#endif
+#endif
 		break;
 	case POWER_SUPPLY_TYPE_USB_HVDCP_3:
-		#if defined (CONFIG_XIAOMI_WHYRED)
+#if defined (CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 		vote(chg->usb_icl_votable, LEGACY_UNKNOWN_VOTER, true, 2000000);
-		#endif
+#endif
 		break;
 	default:
 		smblib_err(chg, "Unknown APSD %d; forcing 500mA\n", pst);
@@ -4344,7 +4361,11 @@ static void smblib_handle_apsd_done(struct smb_charger *chg, bool rising)
 			smblib_set_prop_pd_active(chg, &pval);
 			chg->float_rerun_apsd = false;
 		} else if (apsd_result->bit & FLOAT_CHARGER_BIT) {
+#if defined(CONFIG_XIAOMI_TULIP)
+			vote(chg->usb_icl_votable, LEGACY_UNKNOWN_VOTER, true, 1000000);
+#else
 			vote(chg->usb_icl_votable, LEGACY_UNKNOWN_VOTER, true, 500000);
+#endif
 			chg->float_rerun_apsd = false;
 			smblib_err(chg, "rerun apsd still float\n");
 		}
