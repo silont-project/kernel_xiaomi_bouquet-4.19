@@ -230,7 +230,7 @@ static bool wcd_is_special_headset(struct wcd_mbhc *mbhc)
 					__func__);
 			break;
 		}
-#if defined(CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_MACH_XIAOMI_TULIP)
 		/*Add for selfie stick not work  tangshouxing 9/6*/
 		if (mbhc->impedance_detect) {
 			mbhc->mbhc_cb->compute_impedance(mbhc,

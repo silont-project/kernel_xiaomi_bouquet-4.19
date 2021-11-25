@@ -823,7 +823,7 @@ void wcd_mbhc_find_plug_and_report(struct wcd_mbhc *mbhc,
 			wcd_mbhc_report_plug(mbhc, 0, SND_JACK_HEADPHONE);
 		if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADSET)
 			wcd_mbhc_report_plug(mbhc, 0, SND_JACK_HEADSET);
-#if defined(CONFIG_XIAOMI_WHYRED)
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_MACH_XIAOMI_TULIP)
 			/*
 			* calculate impedance detection
 			* If Zl and Zr > 20k then it is special accessory
