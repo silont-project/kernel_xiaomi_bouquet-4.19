@@ -1171,8 +1171,80 @@ static uint16_t msm_sensor_get_sensor_id_samsung_2L7(struct msm_sensor_ctrl_t *s
 
 }
 
+#ifdef CONFIG_XIAOMI_TULIP
+static uint16_t msm_sensor_get_sensor_id_samsung_3T1(
+		struct msm_sensor_ctrl_t *s_ctrl, char *sensor_fusion_id)
+{
+	int rc = 0;
+	int i = 0;
+	uint16_t sensorid[16] = {0};
+	uint32_t start_add = 0x0A24;
+	struct msm_camera_i2c_client *sensor_i2c_client;
+
+	CDBG("%s:%d E \n", __func__, __LINE__);
+	sensor_i2c_client = s_ctrl->sensor_i2c_client;
+
+	rc = sensor_i2c_client->i2c_func_tbl->i2c_write(
+		sensor_i2c_client, 0x0100,
+		0x01, MSM_CAMERA_I2C_BYTE_DATA);
+	mdelay(2);
+
+	rc = sensor_i2c_client->i2c_func_tbl->i2c_write(
+		sensor_i2c_client, 0x0A02,
+		0x0000, MSM_CAMERA_I2C_BYTE_DATA);
+
+	rc = sensor_i2c_client->i2c_func_tbl->i2c_write(
+		sensor_i2c_client, 0x0A00,
+		0x01, MSM_CAMERA_I2C_BYTE_DATA);
+	mdelay(1);
+
+	for (i = 0; i < 16; i++) {
+		rc = sensor_i2c_client->i2c_func_tbl->i2c_read(
+			sensor_i2c_client, start_add,
+			&sensorid[i], MSM_CAMERA_I2C_WORD_DATA);
+		CDBG("%s:lct read from start_add %x sensrid[%d] %d\n",
+				__func__, start_add, i, sensorid[i]);
+		start_add += 1;
+		mdelay(1);
+	}
+
+	rc = sensor_i2c_client->i2c_func_tbl->i2c_write(
+		sensor_i2c_client, 0x0A00,
+		0x000, MSM_CAMERA_I2C_BYTE_DATA);
+	mdelay(95);
+
+	sensor_i2c_client->i2c_func_tbl->i2c_write(
+		sensor_i2c_client, 0x0a00,
+		0x0000, MSM_CAMERA_I2C_WORD_DATA);
+
+	sprintf(sensor_fusion_id,
+		"%04x%04x%04x%04x%04x%04x%04x%04x%04x%04x%04x%04x%04x%04x%04x",
+		sensorid[0],
+		sensorid[1],
+		sensorid[2],
+		sensorid[3],
+		sensorid[4],
+		sensorid[5],
+		sensorid[6],
+		sensorid[7],
+		sensorid[8],
+		sensorid[9],
+		sensorid[10],
+		sensorid[11],
+		sensorid[12],
+		sensorid[13],
+		sensorid[14]);
+
+	return rc;
+}
+#endif
+
 static struct kobject *msm_sensorid_device=NULL;
+#ifdef CONFIG_XIAOMI_TULIP
+char sensor_fusion_id[512] = {0};
+#else
 static char sensor_fusion_id[512] = {0};
+#endif
 
 void msm_sensor_set_sesnor_id(struct msm_sensor_ctrl_t *s_ctrl)
 {
@@ -1211,7 +1283,12 @@ void msm_sensor_set_sesnor_id(struct msm_sensor_ctrl_t *s_ctrl)
 		pr_err("%s:%d lct read sensor %s fusion id failed\n", __func__, __LINE__, s_ctrl->sensordata->sensor_name);
 			}	
 		}
-	if((!strcmp("whyred_s5k5e8_ofilm_i", s_ctrl->sensordata->sensor_name))||(!strcmp("whyred_s5k5e8_qtech_ii", s_ctrl->sensordata->sensor_name))) {
+	if((!strcmp("whyred_s5k5e8_ofilm_i", s_ctrl->sensordata->sensor_name))||(!strcmp("whyred_s5k5e8_qtech_ii", s_ctrl->sensordata->sensor_name))
+#ifdef CONFIG_XIAOMI_TULIP
+	|| (!strcmp("tulip_s5k5e8_ofilm_i", s_ctrl->sensordata->sensor_name))
+	|| (!strcmp("tulip_s5k5e8_qtech_ii", s_ctrl->sensordata->sensor_name))
+#endif
+		) {
 		rc = msm_sensor_get_sensor_id_samsung_5e8(s_ctrl,sensor_fusion_id_tmp);
 		if (rc < 0){
 		pr_err("%s:%d lct read sensor %s fusion id failed\n", __func__, __LINE__, s_ctrl->sensordata->sensor_name);
@@ -1224,6 +1301,18 @@ void msm_sensor_set_sesnor_id(struct msm_sensor_ctrl_t *s_ctrl)
 			}	
 		}
 
+#ifdef CONFIG_XIAOMI_TULIP
+	if ((!strcmp("tulip_s5k3T1_sunny_i", s_ctrl->sensordata->sensor_name)) ||
+	    (!strcmp("tulip_s5k3T1_ofilm_ii", s_ctrl->sensordata->sensor_name))) {
+		rc = msm_sensor_get_sensor_id_samsung_3T1(s_ctrl, sensor_fusion_id_tmp);
+		if (rc < 0){
+			pr_err("%s:%d lct read sensor %s fusion id failed\n",
+					__func__, __LINE__,
+					s_ctrl->sensordata->sensor_name);
+		}
+	}
+#endif
+
 	if(!strcmp("whyred_ov13855_sunny_cn_i", s_ctrl->sensordata->sensor_name)){
 			rc = msm_sensor_get_sensor_id_ovti_13855(s_ctrl,sensor_fusion_id_tmp);
 			if (rc < 0){
@@ -1232,8 +1321,14 @@ void msm_sensor_set_sesnor_id(struct msm_sensor_ctrl_t *s_ctrl)
 			}
 
 	CDBG("%s:%d lct read sensor fusion id %s\n", __func__, __LINE__, sensor_fusion_id_tmp);
+#ifdef CONFIG_XIAOMI_TULIP
+	if (s_ctrl->sensordata->sensor_info->position != BACK_CAMERA_B) {
+#endif
 		strcat(sensor_fusion_id, sensor_fusion_id_tmp);
 		strcat(sensor_fusion_id, "\n");
+#ifdef CONFIG_XIAOMI_TULIP
+	}
+#endif
 }
 
 static ssize_t msm_sensor_id_show(struct device *dev,
@@ -1289,7 +1384,7 @@ int32_t msm_sensor_driver_probe(void *setting,
 	unsigned long                        mount_pos = 0;
 	uint32_t                             is_yuv;
 
-#ifdef CONFIG_XIAOMI_WHYRED
+#if defined(CONFIG_XIAOMI_WHYRED) || defined(CONFIG_XIAOMI_TULIP)
 	uint32_t                             i = 0;
 #endif
 
@@ -1391,6 +1486,38 @@ int32_t msm_sensor_driver_probe(void *setting,
 		goto free_slave_info;
 	}
 
+#ifdef CONFIG_XIAOMI_TULIP
+	if ((strcmp(slave_info->eeprom_name,"tulip_s5k5e8_ofilm_i") == 0) ||
+		(strcmp(slave_info->eeprom_name,"tulip_s5k5e8_qtech_ii") == 0) ||
+		(strcmp(slave_info->eeprom_name,"tulip_ov02a10_ofilm_ii") == 0) ||
+		(strcmp(slave_info->eeprom_name,"tulip_ov02a10_sunny_i") == 0)) {
+		for (i = 0; i < CAMERA_VENDOR_EEPROM_COUNT_MAX; i++) {
+			if (s_vendor_eeprom[i].eeprom_name != NULL) {
+				printk(" slave_info->eeprom_name=%s, s_vendor_eeprom[%d]=%s, module_id=%d\n",
+					slave_info->eeprom_name, i, s_vendor_eeprom[i].eeprom_name, s_vendor_eeprom[i].module_id);
+				if (strcmp(slave_info->eeprom_name, s_vendor_eeprom[i].eeprom_name) == 0) {
+					if (((strcmp(slave_info->eeprom_name, "tulip_s5k5e8_ofilm_i") == 0) &&
+						(s_vendor_eeprom[i].module_id == MID_OFILM)) ||
+					    ((strcmp(slave_info->eeprom_name, "tulip_s5k5e8_qtech_ii") == 0) &&
+						(s_vendor_eeprom[i].module_id == MID_QTECH)) ||
+					    ((strcmp(slave_info->eeprom_name, "tulip_ov02a10_ofilm_ii") == 0) &&
+						(s_vendor_eeprom[i].module_id == MID_OFILM)) ||
+					    ((strcmp(slave_info->eeprom_name, "tulip_ov02a10_sunny_i") == 0) &&
+						(s_vendor_eeprom[i].module_id == MID_SUNNY))) {
+							printk("Lc module found! probe continue!\n");
+						break;
+					}
+				}
+			}
+		}
+
+		if (i >= CAMERA_VENDOR_EEPROM_COUNT_MAX) {
+			pr_err(" Lc module not found! probe break failed!\n");
+			rc = -EFAULT;
+			goto free_slave_info;
+		}
+	}
+#endif
 #ifdef CONFIG_XIAOMI_WHYRED
 	if( (strcmp(slave_info->eeprom_name,"whyred_s5k5e8_ofilm_i") == 0) ||
 		(strcmp(slave_info->eeprom_name,"whyred_s5k5e8_qtech_ii") == 0)){
