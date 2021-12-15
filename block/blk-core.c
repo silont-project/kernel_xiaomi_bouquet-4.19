@@ -2134,7 +2134,7 @@ static void handle_bad_sector(struct bio *bio, sector_t maxsector)
 	char b[BDEVNAME_SIZE];
 
 	pr_info_ratelimited("%s: attempt to access beyond end of device\n"
-			    "%s: rw=%d, want=%llu, limit=%llu\n",
+			    "%s: rw=%d, want=%lu, limit=%lu\n",
 			    current->comm,
 			    bio_devname(bio, b), bio->bi_opf,
 			    bio_end_sector(bio), maxsector);
