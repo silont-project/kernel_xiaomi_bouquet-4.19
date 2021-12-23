@@ -606,6 +606,7 @@ lock_err:
 
 static int dp_pll_disable_14nm(struct clk_hw *hw)
 {
+	int rc = 0;
 	struct dp_pll_vco_clk *vco = to_dp_vco_hw(hw);
 	struct mdss_pll_resources *dp_res = vco->priv;
 
@@ -617,7 +618,7 @@ static int dp_pll_disable_14nm(struct clk_hw *hw)
 	 */
 	wmb();
 
-	return 0;
+	return rc;
 }
 
 
@@ -800,8 +801,10 @@ int dp_pll_clock_register_14nm(struct platform_device *pdev,
 
 	clk_data->clks = devm_kzalloc(&pdev->dev, (num_clks *
 				sizeof(struct clk *)), GFP_KERNEL);
-	if (!clk_data->clks)
+	if (!clk_data->clks) {
+		devm_kfree(&pdev->dev, clk_data);
 		return -ENOMEM;
+	}
 	clk_data->clk_num = num_clks;
 
 	pll_res->priv = &dp_pdb;
@@ -840,5 +843,7 @@ int dp_pll_clock_register_14nm(struct platform_device *pdev,
 	}
 	return 0;
 clk_reg_fail:
+	devm_kfree(&pdev->dev, clk_data->clks);
+	devm_kfree(&pdev->dev, clk_data);
 	return rc;
 }

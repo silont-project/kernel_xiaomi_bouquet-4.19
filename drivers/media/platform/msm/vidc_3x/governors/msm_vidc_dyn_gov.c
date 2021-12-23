@@ -18,7 +18,6 @@
 #include "../msm_vidc_debug.h"
 #include "../vidc_hfi_api.h"
 
-
 enum vidc_bus_type {
 	PERF,
 	DDR,
