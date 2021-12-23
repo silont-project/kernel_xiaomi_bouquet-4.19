@@ -695,26 +695,6 @@ static void __exit virt_wifi_cleanup_module(void)
 	virt_wifi_destroy_wiphy(common_wiphy);
 	unregister_netdevice_notifier(&virt_wifi_notifier);
 }
-
-int virt_wifi_register_network_simulation
-	(struct virt_wifi_network_simulation *ops)
-{
-	struct virt_wifi_wiphy_priv *priv = wiphy_priv(common_wiphy);
-	if (priv->network_simulation)
-		return -EEXIST;
-	priv->network_simulation = ops;
-	return 0;
-}
-EXPORT_SYMBOL_GPL(virt_wifi_register_network_simulation);
-
-int virt_wifi_unregister_network_simulation(void)
-{
-	struct virt_wifi_wiphy_priv *priv = wiphy_priv(common_wiphy);
-	if(!priv->network_simulation)
-		return -ENODATA;
-	priv->network_simulation = NULL;
-	return 0;
-}
 EXPORT_SYMBOL_GPL(virt_wifi_unregister_network_simulation);
 
 module_init(virt_wifi_init_module);
