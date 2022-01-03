@@ -18,12 +18,6 @@
 #define KGSL_PWREVENT_BUS_FREQ	2
 #define KGSL_PWREVENT_MAX	3
 
-/**
- * Amount of time running at a level to be considered
- * "stable" in msec
- */
-#define STABLE_TIME	150
-
 struct kgsl_power_stats {
 	u64 busy_time;
 	u64 ram_time;

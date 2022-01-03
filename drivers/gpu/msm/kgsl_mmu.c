@@ -195,6 +195,21 @@ err:
 	return ret;
 }
 
+#ifdef CONFIG_TRACE_GPU_MEM
+static void kgsl_mmu_trace_gpu_mem_pagetable(struct kgsl_pagetable *pagetable)
+{
+	if (!kgsl_mmu_is_perprocess_pt(pagetable))
+		return;
+
+	trace_gpu_mem_total(0, pagetable->name,
+			(u64)atomic_long_read(&pagetable->stats.mapped));
+}
+#else
+static void kgsl_mmu_trace_gpu_mem_pagetable(struct kgsl_pagetable *pagetable)
+{
+}
+#endif
+
 void
 kgsl_mmu_detach_pagetable(struct kgsl_pagetable *pagetable)
 {
@@ -379,6 +394,7 @@ kgsl_mmu_map(struct kgsl_pagetable *pagetable,
 				struct kgsl_memdesc *memdesc)
 {
 	int size;
+	struct kgsl_device *device = KGSL_MMU_DEVICE(pagetable->mmu);
 
 	if (!memdesc->gpuaddr)
 		return -EINVAL;
@@ -402,6 +418,13 @@ kgsl_mmu_map(struct kgsl_pagetable *pagetable,
 		atomic_inc(&pagetable->stats.entries);
 		KGSL_STATS_ADD(size, &pagetable->stats.mapped,
 				&pagetable->stats.max_mapped);
+		kgsl_mmu_trace_gpu_mem_pagetable(pagetable);
+
+		if (!(kgsl_memdesc_is_global(memdesc)
+				&& (KGSL_MEMDESC_MAPPED & memdesc->priv))
+				&& !kgsl_memdesc_is_dmabuf(memdesc)) {
+			kgsl_trace_gpu_mem_total(device, size);
+		}
 
 		/* This is needed for non-sparse mappings */
 		memdesc->priv |= KGSL_MEMDESC_MAPPED;
@@ -474,6 +497,7 @@ kgsl_mmu_unmap(struct kgsl_pagetable *pagetable,
 		struct kgsl_memdesc *memdesc)
 {
 	int ret = 0;
+	struct kgsl_device *device = KGSL_MMU_DEVICE(pagetable->mmu);
 
 	if (memdesc->size == 0)
 		return -EINVAL;
@@ -494,9 +518,13 @@ kgsl_mmu_unmap(struct kgsl_pagetable *pagetable,
 
 		atomic_dec(&pagetable->stats.entries);
 		atomic_long_sub(size, &pagetable->stats.mapped);
+		kgsl_mmu_trace_gpu_mem_pagetable(pagetable);
 
-		if (!kgsl_memdesc_is_global(memdesc))
+		if (!kgsl_memdesc_is_global(memdesc)) {
 			memdesc->priv &= ~KGSL_MEMDESC_MAPPED;
+			if (!kgsl_memdesc_is_dmabuf(memdesc))
+				kgsl_trace_gpu_mem_total(device, -(size));
+		}
 	}
 
 	return ret;
@@ -508,6 +536,8 @@ int kgsl_mmu_map_offset(struct kgsl_pagetable *pagetable,
 			struct kgsl_memdesc *memdesc, uint64_t physoffset,
 			uint64_t size, uint64_t flags)
 {
+	struct kgsl_device *device = KGSL_MMU_DEVICE(pagetable->mmu);
+
 	if (PT_OP_VALID(pagetable, mmu_map_offset)) {
 		int ret;
 
@@ -519,6 +549,9 @@ int kgsl_mmu_map_offset(struct kgsl_pagetable *pagetable,
 		atomic_inc(&pagetable->stats.entries);
 		KGSL_STATS_ADD(size, &pagetable->stats.mapped,
 				&pagetable->stats.max_mapped);
+		kgsl_mmu_trace_gpu_mem_pagetable(pagetable);
+
+		kgsl_trace_gpu_mem_total(device, size);
 	}
 
 	return 0;
@@ -529,6 +562,8 @@ int kgsl_mmu_unmap_offset(struct kgsl_pagetable *pagetable,
 		struct kgsl_memdesc *memdesc, uint64_t addr, uint64_t offset,
 		uint64_t size)
 {
+	struct kgsl_device *device = KGSL_MMU_DEVICE(pagetable->mmu);
+
 	if (PT_OP_VALID(pagetable, mmu_unmap_offset)) {
 		int ret;
 
@@ -539,6 +574,9 @@ int kgsl_mmu_unmap_offset(struct kgsl_pagetable *pagetable,
 
 		atomic_dec(&pagetable->stats.entries);
 		atomic_long_sub(size, &pagetable->stats.mapped);
+		kgsl_mmu_trace_gpu_mem_pagetable(pagetable);
+
+		kgsl_trace_gpu_mem_total(device, -(size));
 	}
 
 	return 0;
@@ -548,6 +586,8 @@ EXPORT_SYMBOL(kgsl_mmu_unmap_offset);
 int kgsl_mmu_sparse_dummy_map(struct kgsl_pagetable *pagetable,
 		struct kgsl_memdesc *memdesc, uint64_t offset, uint64_t size)
 {
+	struct kgsl_device *device = KGSL_MMU_DEVICE(pagetable->mmu);
+
 	if (PT_OP_VALID(pagetable, mmu_sparse_dummy_map)) {
 		int ret;
 
@@ -558,6 +598,9 @@ int kgsl_mmu_sparse_dummy_map(struct kgsl_pagetable *pagetable,
 
 		atomic_dec(&pagetable->stats.entries);
 		atomic_long_sub(size, &pagetable->stats.mapped);
+		kgsl_mmu_trace_gpu_mem_pagetable(pagetable);
+
+		kgsl_trace_gpu_mem_total(device, -(size));
 	}
 
 	return 0;

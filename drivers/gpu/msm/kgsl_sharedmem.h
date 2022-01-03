@@ -68,8 +68,8 @@ int kgsl_allocate_user(struct kgsl_device *device,
 
 void kgsl_get_memory_usage(char *str, size_t len, uint64_t memflags);
 
-int kgsl_sharedmem_page_alloc_user(struct kgsl_memdesc *memdesc,
-				uint64_t size);
+int kgsl_sharedmem_page_alloc_user(struct kgsl_device *device,
+				struct kgsl_memdesc *memdesc, uint64_t size);
 
 void kgsl_free_secure_page(struct page *page);
 
@@ -311,6 +311,18 @@ int kgsl_allocate_global(struct kgsl_device *device,
  */
 void kgsl_free_global(struct kgsl_device *device, struct kgsl_memdesc *memdesc);
 
+/*
+ * kgsl_memdesc_is_dmabuf - Return true if the object is an
+ * imported dma-buf
+ * @memdesc: A handle to GPU memory descriptor
+ *
+ * Return: True if the memdesc is an imported dma-buf
+ */
+static inline bool kgsl_memdesc_is_dmabuf(const struct kgsl_memdesc *memdesc)
+{
+	return memdesc->flags & KGSL_MEMFLAGS_USERMEM_ION;
+}
+
 void kgsl_sharedmem_set_noretry(bool val);
 bool kgsl_sharedmem_get_noretry(void);
 
@@ -366,24 +378,18 @@ static inline void kgsl_free_sgt(struct sg_table *sgt)
  *
  * Return supported pagesize
  */
-#ifndef CONFIG_ALLOC_BUFFERS_IN_4K_CHUNKS
-static inline int kgsl_get_page_size(size_t size, unsigned int align,
-			struct kgsl_memdesc *memdesc)
+#if !defined(CONFIG_QCOM_KGSL_USE_SHMEM) && \
+	!defined(CONFIG_ALLOC_BUFFERS_IN_4K_CHUNKS)
+static inline int kgsl_get_page_size(size_t size, unsigned int align)
 {
-	if (memdesc->priv & KGSL_MEMDESC_USE_SHMEM)
-		return PAGE_SIZE;
+	size_t pool;
 
-	if (align >= ilog2(SZ_1M) && size >= SZ_1M &&
-		kgsl_pool_avaialable(SZ_1M))
-		return SZ_1M;
-	else if (align >= ilog2(SZ_64K) && size >= SZ_64K &&
-		kgsl_pool_avaialable(SZ_64K))
-		return SZ_64K;
-	else if (align >= ilog2(SZ_8K) && size >= SZ_8K &&
-		kgsl_pool_avaialable(SZ_8K))
-		return SZ_8K;
-	else
-		return PAGE_SIZE;
+	for (pool = SZ_1M; pool > PAGE_SIZE; pool >>= 1)
+		if ((align >= ilog2(pool)) && (size >= pool) &&
+			kgsl_pool_avaialable(pool))
+			return pool;
+
+	return PAGE_SIZE;
 }
 #else
 static inline int kgsl_get_page_size(size_t size, unsigned int align)
@@ -407,10 +413,12 @@ unsigned int kgsl_gfp_mask(unsigned int page_order);
  * kgsl_zero_page() - zero out a page
  * @p: pointer to the struct page
  * @order: order of the page
+ * @dev: Pointer to the device
  *
  * Map a page into kernel and zero it out
  */
-void kgsl_zero_page(struct page *page, unsigned int order);
+void kgsl_zero_page(struct page *page, unsigned int order,
+					struct device *dev);
 
 /**
  * kgsl_flush_page - flush a page
