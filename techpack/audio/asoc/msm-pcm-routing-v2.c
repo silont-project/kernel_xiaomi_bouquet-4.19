@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
+/* Copyright (C) 2019 XiaoMi, Inc. */
 
 #include <linux/init.h>
 #include <linux/err.h>
@@ -1257,9 +1258,6 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 	pr_debug("%s: fedai_id %d, session_type %d, be_id %d\n",
 	       __func__, fedai_id, session_type, be_id);
 
-	if (cal_data == NULL)
-		goto done;
-
 	app_type = fe_dai_app_type_cfg[fedai_id][session_type][be_id].app_type;
 	acdb_dev_id =
 		fe_dai_app_type_cfg[fedai_id][session_type][be_id].acdb_dev_id;
@@ -1280,7 +1278,6 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 		if (topology < 0)
 			topology = NULL_COPP_TOPOLOGY;
 	}
-done:
 	pr_debug("%s: Using topology %d\n", __func__, topology);
 	return topology;
 }
@@ -3621,6 +3618,23 @@ static SOC_ENUM_DOUBLE_DECL(mm30_ch1_enum,
 static SOC_ENUM_DOUBLE_DECL(mm30_ch2_enum,
 	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA30, 1, be_name);
 
+static SOC_ENUM_DOUBLE_DECL(mm2_ch1_enum,
+	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA2, 0, be_name);
+static SOC_ENUM_DOUBLE_DECL(mm2_ch2_enum,
+	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA2, 1, be_name);
+static SOC_ENUM_DOUBLE_DECL(mm2_ch3_enum,
+	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA2, 2, be_name);
+static SOC_ENUM_DOUBLE_DECL(mm2_ch4_enum,
+	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA2, 3, be_name);
+static SOC_ENUM_DOUBLE_DECL(mm2_ch5_enum,
+	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA2, 4, be_name);
+static SOC_ENUM_DOUBLE_DECL(mm2_ch6_enum,
+	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA2, 5, be_name);
+static SOC_ENUM_DOUBLE_DECL(mm2_ch7_enum,
+	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA2, 6, be_name);
+static SOC_ENUM_DOUBLE_DECL(mm2_ch8_enum,
+	SND_SOC_NOPM, MSM_FRONTEND_DAI_MULTIMEDIA2, 7, be_name);
+
 static int msm_pcm_get_ctl_enum_info(struct snd_ctl_elem_info *uinfo,
 		unsigned int channels,
 		unsigned int items, const char *const names[])
@@ -4236,6 +4250,16 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.put = msm_pcm_channel_weight_put,
 	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
 		{.shift = MSM_FRONTEND_DAI_MULTIMEDIA2, .rshift = 2,}
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Output Channel4",
+	.info = msm_pcm_channel_weight_info,
+	.get = msm_pcm_channel_weight_get,
+	.put = msm_pcm_channel_weight_put,
+	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
+		{.shift = MSM_FRONTEND_DAI_MULTIMEDIA2, .rshift = 3,}
 	},
 	{
 	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
@@ -5228,6 +5252,78 @@ static const struct snd_kcontrol_new channel_mixer_controls[] = {
 	.put = msm_pcm_channel_output_map_put,
 	.private_value = (unsigned long)&(struct soc_multi_mixer_control)
 		{ .shift = MSM_FRONTEND_DAI_MULTIMEDIA30,}
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Channel1",
+	.info = msm_pcm_channel_input_be_info,
+	.get = msm_pcm_channel_input_be_get,
+	.put = msm_pcm_channel_input_be_put,
+	.private_value = (unsigned long)&(mm2_ch1_enum)
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Channel2",
+	.info = msm_pcm_channel_input_be_info,
+	.get = msm_pcm_channel_input_be_get,
+	.put = msm_pcm_channel_input_be_put,
+	.private_value = (unsigned long)&(mm2_ch2_enum)
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Channel3",
+	.info = msm_pcm_channel_input_be_info,
+	.get = msm_pcm_channel_input_be_get,
+	.put = msm_pcm_channel_input_be_put,
+	.private_value = (unsigned long)&(mm2_ch3_enum)
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Channel4",
+	.info = msm_pcm_channel_input_be_info,
+	.get = msm_pcm_channel_input_be_get,
+	.put = msm_pcm_channel_input_be_put,
+	.private_value = (unsigned long)&(mm2_ch4_enum)
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Channel5",
+	.info = msm_pcm_channel_input_be_info,
+	.get = msm_pcm_channel_input_be_get,
+	.put = msm_pcm_channel_input_be_put,
+	.private_value = (unsigned long)&(mm2_ch5_enum)
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Channel6",
+	.info = msm_pcm_channel_input_be_info,
+	.get = msm_pcm_channel_input_be_get,
+	.put = msm_pcm_channel_input_be_put,
+	.private_value = (unsigned long)&(mm2_ch6_enum)
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Channel7",
+	.info = msm_pcm_channel_input_be_info,
+	.get = msm_pcm_channel_input_be_get,
+	.put = msm_pcm_channel_input_be_put,
+	.private_value = (unsigned long)&(mm2_ch7_enum)
+	},
+	{
+	.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+	.name = "MultiMedia2 Channel8",
+	.info = msm_pcm_channel_input_be_info,
+	.get = msm_pcm_channel_input_be_get,
+	.put = msm_pcm_channel_input_be_put,
+	.private_value = (unsigned long)&(mm2_ch8_enum)
 	},
 };
 
@@ -7647,6 +7743,11 @@ static const struct snd_kcontrol_new primary_mi2s_rx_port_mixer_controls[] = {
 	MSM_BACKEND_DAI_PRI_MI2S_RX,
 	MSM_BACKEND_DAI_SEC_AUXPCM_TX, 1, 0, msm_routing_get_port_mixer,
 	msm_routing_put_port_mixer),
+#if defined(CONFIG_SND_SOC_TAS2557)
+	SOC_SINGLE_EXT("INT3_MI2S_TX", MSM_BACKEND_DAI_PRI_MI2S_RX,
+	MSM_BACKEND_DAI_INT3_MI2S_TX, 1, 0, msm_routing_get_port_mixer,
+	msm_routing_put_port_mixer),
+#endif
 };
 
 static const struct snd_kcontrol_new quat_mi2s_rx_port_mixer_controls[] = {
@@ -23011,10 +23112,11 @@ static int msm_routing_put_stereo_to_custom_stereo_control(
 					goto skip_send_custom_stereo;
 				topo_id = adm_get_topology_for_port_copp_idx(
 					msm_bedais[be_index].port_id, idx);
-				if (topo_id < 0)
+				if (topo_id < 0) {
 					pr_debug("%s:Err:custom stereo topo %d",
 						 __func__, topo_id);
 					pr_debug("idx %d\n", idx);
+				}
 				if (topo_id == DS2_ADM_COPP_TOPOLOGY_ID)
 					rc = msm_ds2_dap_set_custom_stereo_onoff
 						(msm_bedais[be_index].port_id,
@@ -30337,7 +30439,7 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 	{"INT0_MI2S_RX", NULL, "INT0_MI2S_RX_DL_HL"},
 	{"INT4_MI2S_RX_DL_HL", "Switch", "INT4_MI2S_DL_HL"},
 	{"INT4_MI2S_RX", NULL, "INT4_MI2S_RX_DL_HL"},
-	{"PRI_MI2S_RX_DL_HL", "Switch", "PRI_MI2S_DL_HL"},
+	{"PRI_MI2S_RX_DL_HL", "Switch", "INT4_MI2S_DL_HL"},
 	{"PRI_MI2S_RX", NULL, "PRI_MI2S_RX_DL_HL"},
 	{"SEC_MI2S_RX_DL_HL", "Switch", "SEC_MI2S_DL_HL"},
 	{"SEC_MI2S_RX", NULL, "SEC_MI2S_RX_DL_HL"},
@@ -30413,6 +30515,9 @@ static const struct snd_soc_dapm_route intercon_mi2s[] = {
 	{"PRI_MI2S_RX Port Mixer", "SEC_MI2S_TX", "SEC_MI2S_TX"},
 	{"PRI_MI2S_RX Port Mixer", "QUAT_MI2S_TX", "QUAT_MI2S_TX"},
 	{"PRI_MI2S_RX Port Mixer", "TERT_MI2S_TX", "TERT_MI2S_TX"},
+#if defined(CONFIG_SND_SOC_TAS2557)
+	{"PRI_MI2S_RX Port Mixer", "INT3_MI2S_TX", "INT3_MI2S_TX"},
+#endif
 	{"PRI_MI2S_RX Port Mixer", "QUIN_MI2S_TX", "QUIN_MI2S_TX"},
 	{"PRI_MI2S_RX Port Mixer", "SENARY_MI2S_TX", "SENARY_MI2S_TX"},
 	{"PRI_MI2S_RX Port Mixer", "SLIM_0_TX", "SLIMBUS_0_TX"},

@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
+/* Copyright (C) 2019 XiaoMi, Inc. */
 
 #include <linux/input.h>
 #include <linux/of_gpio.h>
@@ -233,9 +234,15 @@ static struct wcd_mbhc_config mbhc_cfg = {
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = true,
 	.key_code[0] = KEY_MEDIA,
-	.key_code[1] = KEY_VOICECOMMAND,
-	.key_code[2] = KEY_VOLUMEUP,
-	.key_code[3] = KEY_VOLUMEDOWN,
+#if 0
+	.key_code[1] = KEY_VOLUMEUP,
+    .key_code[2] = KEY_VOLUMEDOWN,
+    .key_code[3] = KEY_VOICECOMMAND,
+#else
+	.key_code[1] = KEY_VOLUMEUP,
+	.key_code[2] = KEY_VOLUMEDOWN,
+	.key_code[3] = 0,
+#endif
 	.key_code[4] = 0,
 	.key_code[5] = 0,
 	.key_code[6] = 0,
@@ -4728,7 +4735,7 @@ void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 					pdata->mi2s_gpio_p[index]);
 
 		ret = msm_mi2s_set_sclk(substream, false);
-		if (ret < 0)
+		if (ret < 0) 
 			pr_err("%s:clock disable failed for MI2S (%d); ret=%d\n",
 				__func__, index, ret);
 
@@ -5509,6 +5516,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	}
 	if (pdata->snd_card_val != INT_SND_CARD)
 		msm_ext_register_audio_notifier(pdev);
+
+	printk("%s_ok\n",__func__);
 
 	return 0;
 err:

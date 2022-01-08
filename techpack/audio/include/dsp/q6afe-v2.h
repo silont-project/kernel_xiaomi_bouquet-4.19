@@ -39,6 +39,7 @@
 #define AFE_CLK_VERSION_V1    1
 #define AFE_CLK_VERSION_V2    2
 
+#define AFE_API_VERSION_V1		1
 #define AFE_API_VERSION_SUPPORT_SPV3	2
 #define AFE_API_VERSION_V3		3
 /* for VAD and Island mode */
@@ -295,6 +296,7 @@ enum {
 	IDX_RT_PROXY_PORT_002_TX,
 	/* IDX 212 */
 	IDX_HDMI_RX_MS,
+	IDX_AFE_PORT_ID_PSEUDOPORT_01,
 	AFE_MAX_PORTS
 };
 
